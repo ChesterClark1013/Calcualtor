@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TDEE & Calorie Goal Calculator</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: black;
+      color: white;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 4px;
+      border: none;
+      font-size: 16px;
+      background-color: #ecf0f1;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    button:focus,
+    input:focus,
+    select:focus {
+      outline: 2px solid #1abc9c;
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #1abc9c;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+      transition: all 0.3s ease;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .row input {
+      flex: 1;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      button {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <h2>Total Daily Energy Expenditure (TDEE) Calculator</h2>
+
+  <form onsubmit="event.preventDefault(); calculateTDEE();">
+    <label>Unit System</label>
+    <select id="unit">
+      <option value="metric">Metric (kg, cm)</option>
+      <option value="imperial">Imperial (lbs, ft/in)</option>
+    </select>
+
+    <label>Gender</label>
+    <select id="gender">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
+
+    <label>Age</label>
+    <input type="number" id="age" min="0" required />
+
+    <div id="heightMetric">
+      <label>Height (cm)</label>
+      <input type="number" id="heightCm" min="0" required />
+    </div>
+
+    <div id="heightImperial" style="display:none;">
+      <label>Height (ft / in)</label>
+      <div class="row">
+        <input type="number" id="heightFt" min="0" placeholder="Feet" required />
+        <input type="number" id="heightIn" min="0" max="11" placeholder="Inches" required />
+      </div>
+    </div>
+
+    <div id="weightMetric">
+      <label>Weight (kg)</label>
+      <input type="number" id="weightKg" min="0" required />
+    </div>
+
+    <div id="weightImperial" style="display:none;">
+      <label>Weight (lbs)</label>
+      <input type="number" id="weightLbs" min="0" required />
+    </div>
+
+    <label>Activity Level</label>
+    <select id="activity">
+      <option value="1.2">Sedentary</option>
+      <option value="1.375">Lightly active</option>
+      <option value="1.55">Moderately active</option>
+      <option value="1.725">Very active</option>
+      <option value="1.9">Super active</option>
+    </select>
+
+    <label>Goal</label>
+    <select id="goal">
+      <option value="lose">Lose Weight</option>
+      <option value="maintain">Maintain Weight</option>
+      <option value="gain">Gain Weight</option>
+    </select>
+
+    <div id="goalInputs">
+      <label>Amount (kg or lbs)</label>
+      <input type="number" id="weightChange" min="0" />
+
+      <label>Timeframe (weeks)</label>
+      <input type="number" id="timeFrame" min="1" />
+    </div>
+
+    <button type="submit">Calculate</button>
+  </form>
+
+  <div id="result" class="result"></div>
+
+  <p class="disclaimer">
+    Values are estimates and can vary based on individual metabolism and body composition.
+  </p>
+</div>
+
+<script>
+  const unitSelect = document.getElementById("unit");
+  const goalSelect = document.getElementById("goal");
+
+  unitSelect.addEventListener("change", toggleUnits);
+  goalSelect.addEventListener("change", toggleGoalInputs);
+
+  window.onload = () => {
+    toggleUnits();
+    toggleGoalInputs();
+  };
+
+  function toggleUnits() {
+    const isMetric = unitSelect.value === "metric";
+    ["heightCm","weightKg","heightFt","heightIn","weightLbs"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+
+    heightMetric.style.display = isMetric ? "block" : "none";
+    weightMetric.style.display = isMetric ? "block" : "none";
+    heightImperial.style.display = isMetric ? "none" : "block";
+    weightImperial.style.display = isMetric ? "none" : "block";
+  }
+
+  function toggleGoalInputs() {
+    document.getElementById("goalInputs").style.display =
+      goalSelect.value === "maintain" ? "none" : "block";
+  }
+
+  function calculateTDEE() {
+    const gender = genderSelect.value = document.getElementById("gender").value;
+    const age = +ageInput.value || document.getElementById("age").value;
+    const activity = +document.getElementById("activity").value;
+    const unit = unitSelect.value;
+
+    let weightKg, heightCm;
+
+    if (unit === "metric") {
+      weightKg = +weightKgInput.value || document.getElementById("weightKg").value;
+      heightCm = +heightCmInput.value || document.getElementById("heightCm").value;
+    } else {
+      const lbs = +document.getElementById("weightLbs").value;
+      const ft = +document.getElementById("heightFt").value;
+      const inch = +document.getElementById("heightIn").value;
+      weightKg = lbs * 0.453592;
+      heightCm = ((ft * 12) + inch) * 2.54;
+    }
+
+    const bmr = gender === "male"
+      ? 10 * weightKg + 6.25 * heightCm - 5 * age + 5
+      : 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+
+    const tdee = Math.round(bmr * activity);
+    let message = `Your estimated TDEE is <strong>${tdee} calories/day</strong>.`;
+
+    const goal = goalSelect.value;
+    if (goal !== "maintain") {
+      const amount = +document.getElementById("weightChange").value;
+      const weeks = +document.getElementById("timeFrame").value;
+      const calPerUnit = unit === "metric" ? 7700 : 3500;
+      const delta = (amount * calPerUnit) / (weeks * 7);
+      let target = goal === "lose" ? tdee - delta : tdee + delta;
+
+      const minCals = gender === "male" ? 1500 : 1200;
+
+      if (target < minCals) {
+        message += `<br><strong>Warning:</strong> Intake (${Math.round(target)} kcal) is very low.`;
+      } else if (goal === "gain" && target > tdee + 1000) {
+        message += `<br><strong>Warning:</strong> Very aggressive surplus detected.`;
+      } else {
+        message += `<br>Daily target: <strong>${Math.round(target)} calories</strong>.`;
+      }
+    }
+
+    const result = document.getElementById("result");
+    result.innerHTML = message;
+    result.style.display = "block";
+  }
+</script>
+</body>
+</html>
